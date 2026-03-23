@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CES Waiting Room</title>
+
+  <!-- ============================================================
+       FONTS & EXTERNAL DEPS
+  ============================================================ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — bright, fresh, easy on the eyes
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f0f4ff;
+      --surface:   #ffffff;
+      --border:    #d6dff5;
+      --border2:   #bfcbec;
+      --text:      #1a1f36;
+      --muted:     #7a85a3;
+      --amber:     #2563eb;
+      --amber-dim: #bfcbec;
+      --green:     #16a34a;
+      --blue:      #2563eb;
+      --red:       #dc2626;
+      --radius:    6px;
+      --mono:      'DM Mono', monospace;
+      --sans:      'Syne', sans-serif;
+    }
+
+    html, body, #root {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    /* ---- Layout ---- */
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo {
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      color: var(--amber);
+    }
+    .header-logo span { color: var(--text); }
+    .header-meta {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ---- Main ---- */
+    .main { flex: 1; padding: 32px; max-width: 1100px; width: 100%; margin: 0 auto; }
+
+    /* ---- Toolbar ---- */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .toolbar-title {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .toolbar-title strong {
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .btn-primary {
+      background: var(--amber);
+      color: #0e0e0f;
+      border-color: var(--amber);
+    }
+    .btn-primary:hover { background: #f7b84a; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border2);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: transparent;
+      padding: 6px 8px;
+    }
+    .btn-danger:hover { background: rgba(224,82,82,0.1); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ---- Table ---- */
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead { background: var(--surface); }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr {
+      background: var(--bg);
+      transition: background 0.1s;
+    }
+    tbody tr:hover { background: rgba(37,99,235,0.04); }
+
+    /* drag states */
+    tbody tr.dragging {
+      opacity: 0.4;
+    }
+    tbody tr.drag-over {
+      background: rgba(37,99,235,0.07);
+      box-shadow: inset 0 2px 0 var(--blue);
+    }
+
+    /* ---- Drag handle ---- */
+    .drag-handle {
+      cursor: grab;
+      color: var(--border2);
+      font-size: 16px;
+      line-height: 1;
+      user-select: none;
+      padding: 0 4px;
+      transition: color 0.15s;
+    }
+    .drag-handle:hover { color: var(--muted); }
+    .drag-handle:active { cursor: grabbing; }
+
+    /* ---- Status badge / select ---- */
+    .status-select {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 28px 5px 10px;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666676' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      transition: border-color 0.15s;
+    }
+    .status-select:hover { border-color: var(--amber); }
+    .status-select:focus { outline: none; border-color: var(--amber); }
+    .status-select option { background: #ffffff; color: var(--text); }
+
+    /* Status color coding */
+    .status-none    { color: var(--muted); border-color: var(--border); }
+    .status-checkin { color: var(--green); border-color: var(--green); }
+    .status-shopping{ color: var(--blue);  border-color: var(--blue); }
+
+    /* ---- Order badge ---- */
+    .order-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ---- Appointment time ---- */
+    .appt-time {
+      font-size: 12px;
+      color: var(--amber);
+      letter-spacing: 0.04em;
+    }
+
+    /* ---- Name ---- */
+    .name-cell { font-weight: 500; }
+
+    /* ---- Modal ---- */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 28px;
+      width: 420px;
+      max-width: calc(100vw - 32px);
+      animation: slideUp 0.18s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    .modal-title {
+      font-family: var(--sans);
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    .modal-title.danger { color: var(--red); }
+
+    /* ---- Form fields ---- */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 9px 12px;
+      transition: border-color 0.15s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--amber);
+    }
+    .field input::placeholder { color: var(--muted); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 22px;
+    }
+
+    /* ---- Empty state ---- */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 12px; }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 10px 18px;
+      font-size: 13px;
+      color: var(--text);
+      z-index: 9999;
+      white-space: nowrap;
+      animation: toastIn 0.2s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .toast.error { border-color: var(--red); color: var(--red); }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ---- Spinner ---- */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px;
+      color: var(--muted);
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    /* ---- Confirmation text ---- */
+    .confirm-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .confirm-text strong { color: var(--text); }
+
+    /* ---- Login screen ---- */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      box-shadow: 0 4px 24px rgba(37,99,235,0.07);
+      animation: slideUp 0.2s ease;
+    }
+    .login-logo {
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      color: var(--blue);
+      margin-bottom: 4px;
+    }
+    .login-logo span { color: var(--text); }
+    .login-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      letter-spacing: 0.04em;
+    }
+    .login-error {
+      background: rgba(220,38,38,0.07);
+      border: 1px solid rgba(220,38,38,0.25);
+      border-radius: var(--radius);
+      color: var(--red);
+      font-size: 12px;
+      padding: 9px 12px;
+      margin-bottom: 16px;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+    .login-btn:hover { background: #1d4ed8 !important; }
+
+    /* ---- Sign out button in header ---- */
+    .btn-signout {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: var(--mono);
+      transition: all 0.15s;
+    }
+    .btn-signout:hover { color: var(--red); border-color: var(--red); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+/* ================================================================
+   ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗
+  ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝
+  ██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
+  ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
+  ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
+   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
+  ================================================================ */
+
+/* ----------------------------------------------------------------
+   ⚙️  SUPABASE CONFIGURATION — EDIT THESE TWO VALUES
+   ----------------------------------------------------------------
+   1. Go to your Supabase project → Settings → API
+   2. Copy "Project URL" → SUPABASE_URL
+   3. Copy "anon / public" key → SUPABASE_ANON_KEY
+   ---------------------------------------------------------------- */
+const SUPABASE_URL      = "https://YOUR_PROJECT_REF.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE";
+
+/* ----------------------------------------------------------------
+   TABLE NAME — change if yours differs
+   ---------------------------------------------------------------- */
+const TABLE = "waiting-room";
+
+/* ----------------------------------------------------------------
+   SQL FOR THE ATOMIC REORDER RPC
+   ----------------------------------------------------------------
+   Run this once in Supabase → SQL Editor to create the function:
+
+   CREATE OR REPLACE FUNCTION reorder_waiting_room(ordered_ids INT[])
+   RETURNS VOID AS $$
+   DECLARE
+     i INT;
+   BEGIN
+     FOR i IN 1 .. array_length(ordered_ids, 1) LOOP
+       UPDATE "waiting-room"
+       SET "order" = i
+       WHERE id = ordered_ids[i];
+     END LOOP;
+   END;
+   $$ LANGUAGE plpgsql;
+
+   This runs inside a single transaction so the reorder is atomic.
+   ---------------------------------------------------------------- */
+
+/* ================================================================
+   APP
+================================================================ */
+
+const { createClient } = supabase;
+const { useState, useEffect, useRef, useCallback } = React;
+
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const STATUS_OPTIONS = [
+  { value: "",           label: "— Select —",  cls: "status-none"    },
+  { value: "Checked-in", label: "Checked-in",  cls: "status-checkin" },
+  { value: "Shopping",   label: "Shopping",    cls: "status-shopping" },
+];
+
+function getStatusClass(val) {
+  const found = STATUS_OPTIONS.find(o => o.value === val);
+  return found ? found.cls : "status-none";
+}
+
+/* ---- Appointment time options: Walk-in + 12:00A–11:45P in 15-min increments ---- */
+const APPT_OPTIONS = (() => {
+  const opts = [{ value: "", label: "— Select —" }, { value: "Walk-in", label: "Walk-in" }];
+  // 1:00P to 5:45P in 15-minute increments
+  for (let h = 13; h <= 17; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 17 && m > 45) break;
+      const h12  = h - 12;
+      const mm   = m === 0 ? "00" : String(m);
+      const label = `${h12}:${mm}P`;
+      opts.push({ value: label, label });
+    }
+  }
+  return opts;
+})();
+
+/* ---- Toast ---- */
+function Toast({ message, type, onDone }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3000);
+    return () => clearTimeout(t);
+  }, []);
+  return <div className={`toast${type === "error" ? " error" : ""}`}>{message}</div>;
+}
+
+/* ---- Login Screen ---- */
+function LoginScreen({ onLogin }) {
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(null);
+
+  const submit = async () => {
+    if (!email.trim() || !password) return;
+    setLoading(true);
+    setError(null);
+    const { error: err } = await db.auth.signInWithPassword({ email: email.trim(), password });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+    // on success, onAuthStateChange in App will handle the transition
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">CES <span>Waiting Room</span></div>
+        <div className="login-subtitle">Sign in to continue</div>
+
+        {error && <div className="login-error">{error}</div>}
+
+        <div className="field">
+          <label>Email</label>
+          <input
+            type="email"
+            autoFocus
+            value={email}
+            placeholder="you@example.com"
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+        <div className="field">
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            placeholder="••••••••"
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+
+        <button
+          className="btn btn-primary login-btn"
+          onClick={submit}
+          disabled={loading}
+        >
+          {loading ? <><span className="spinner" /> Signing in…</> : "Sign In"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Add Row Modal ---- */
+function AddModal({ onClose, onSave }) {
+  const [form, setForm] = useState({ name_first: "", name_last: "", time_appointment: "" });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.name_first.trim() && !form.name_last.trim()) return;
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-title">Add Neighbor</div>
+        <div className="field">
+          <label>First Name</label>
+          <input
+            autoFocus
+            value={form.name_first}
+            placeholder="Jane"
+            onChange={e => set("name_first", e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+        <div className="field">
+          <label>Last Name</label>
+          <input
+            value={form.name_last}
+            placeholder="Smith"
+            onChange={e => set("name_last", e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+        <div className="field">
+          <label>Appointment Time</label>
+          <select
+            className="status-select"
+            style={{width:"100%", padding:"9px 32px 9px 12px", fontSize:"14px"}}
+            value={form.time_appointment}
+            onChange={e => set("time_appointment", e.target.value)}
+          >
+            {APPT_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="btn btn-primary" onClick={submit} disabled={saving}>
+            {saving ? <><span className="spinner" /> Saving…</> : "Add Neighbor"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Edit Row Modal ---- */
+function EditModal({ row, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name_first:       row.name_first       || "",
+    name_last:        row.name_last        || "",
+    time_appointment: row.time_appointment || "",
+    status:           row.status           || "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    setSaving(true);
+    await onSave(row.id, form);
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-title">Edit Neighbor</div>
+        <div className="field">
+          <label>First Name</label>
+          <input
+            autoFocus
+            value={form.name_first}
+            placeholder="Jane"
+            onChange={e => set("name_first", e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+        <div className="field">
+          <label>Last Name</label>
+          <input
+            value={form.name_last}
+            placeholder="Smith"
+            onChange={e => set("name_last", e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+          />
+        </div>
+        <div className="field">
+          <label>Appointment Time</label>
+          <select
+            className="status-select"
+            style={{width:"100%", padding:"9px 32px 9px 12px", fontSize:"14px"}}
+            value={form.time_appointment}
+            onChange={e => set("time_appointment", e.target.value)}
+          >
+            {APPT_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Status</label>
+          <select
+            className={`status-select ${getStatusClass(form.status)}`}
+            style={{width:"100%", padding:"9px 32px 9px 12px", fontSize:"14px"}}
+            value={form.status}
+            onChange={e => set("status", e.target.value)}
+          >
+            {STATUS_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="btn btn-primary" onClick={submit} disabled={saving}>
+            {saving ? <><span className="spinner" /> Saving…</> : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Delete Confirm Modal ---- */
+function DeleteModal({ row, onClose, onConfirm }) {
+  const [deleting, setDeleting] = useState(false);
+  const confirm = async () => {
+    setDeleting(true);
+    await onConfirm(row.id);
+    setDeleting(false);
+    onClose();
+  };
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-title danger">Delete Neighbor</div>
+        <p className="confirm-text">
+          Remove <strong>{row.name_first} {row.name_last}</strong> from the waiting room?
+          This action cannot be undone.
+        </p>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onClose} disabled={deleting}>Cancel</button>
+          <button className="btn btn-danger" style={{border:"1px solid var(--red)", padding:"8px 16px"}} onClick={confirm} disabled={deleting}>
+            {deleting ? <><span className="spinner" /> Deleting…</> : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
+   MAIN APP COMPONENT
+================================================================ */
+function App() {
+  const [session, setSession]         = useState(undefined); // undefined = loading, null = logged out
+  const [rows, setRows]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [deleteRow, setDeleteRow] = useState(null);
+  const [editRow, setEditRow]     = useState(null);
+  const [toast, setToast]         = useState(null);
+
+  // drag state stored in refs to avoid re-renders during drag
+  const dragId   = useRef(null);
+  const dragOver = useRef(null);
+
+  /* ---- auth state ---- */
+  useEffect(() => {
+    db.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
+      setSession(session ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  /* ---- toast helper ---- */
+  const notify = (message, type = "info") => setToast({ message, type, key: Date.now() });
+
+  /* ---- fetch all rows ---- */
+  const fetchRows = useCallback(async () => {
+    const { data, error } = await db
+      .from(TABLE)
+      .select("*")
+      .order("order", { ascending: true });
+    if (error) { notify("Failed to load data: " + error.message, "error"); return; }
+    setRows(data || []);
+    setLoading(false);
+  }, []);
+
+  /* ---- initial load ---- */
+  useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  /* ---- realtime subscription ---- */
+  useEffect(() => {
+    const channel = db
+      .channel("waiting-room-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, () => {
+        fetchRows();
+      })
+      .subscribe();
+    return () => db.removeChannel(channel);
+  }, [fetchRows]);
+
+  /* ================================================================
+     DRAG AND DROP
+  ================================================================ */
+
+  const handleDragStart = (e, id) => {
+    dragId.current = id;
+    e.dataTransfer.effectAllowed = "move";
+    // slight delay so the drag image renders before the row goes translucent
+    requestAnimationFrame(() => {
+      setRows(r => r.map(row => row.id === id ? { ...row, _dragging: true } : row));
+    });
+  };
+
+  const handleDragEnd = () => {
+    dragId.current  = null;
+    dragOver.current = null;
+    setRows(r => r.map(row => ({ ...row, _dragging: false, _dragOver: false })));
+  };
+
+  const handleDragOver = (e, id) => {
+    e.preventDefault();
+    if (id === dragOver.current) return;
+    dragOver.current = id;
+    setRows(r => r.map(row => ({ ...row, _dragOver: row.id === id })));
+  };
+
+  const handleDrop = async (e, targetId) => {
+    e.preventDefault();
+    const sourceId = dragId.current;
+    if (!sourceId || sourceId === targetId) { handleDragEnd(); return; }
+
+    // Build new order optimistically
+    const reordered = (() => {
+      const list  = rows.map(r => ({ ...r, _dragging: false, _dragOver: false }));
+      const fromI = list.findIndex(r => r.id === sourceId);
+      const toI   = list.findIndex(r => r.id === targetId);
+      const [item] = list.splice(fromI, 1);
+      list.splice(toI, 0, item);
+      return list.map((r, i) => ({ ...r, order: i + 1 }));
+    })();
+
+    setRows(reordered); // optimistic update
+    dragId.current   = null;
+    dragOver.current = null;
+
+    // ---- Atomic RPC call ----
+    const orderedIds = reordered.map(r => r.id);
+    const { error } = await db.rpc("reorder_waiting_room", { ordered_ids: orderedIds });
+    if (error) {
+      notify("Reorder failed: " + error.message, "error");
+      fetchRows(); // rollback
+    }
+  };
+
+  /* ================================================================
+     ADD ROW
+  ================================================================ */
+  const handleAdd = async (form) => {
+    // Get current max order
+    const maxOrder = rows.length > 0 ? Math.max(...rows.map(r => r.order || 0)) : 0;
+
+    const { error } = await db.from(TABLE).insert({
+      name_first:       form.name_first.trim(),
+      name_last:        form.name_last.trim(),
+      time_appointment: form.time_appointment,
+      status:           "None",
+      order:            maxOrder + 1,
+    });
+    if (error) notify("Add failed: " + error.message, "error");
+    // realtime will refresh rows
+  };
+
+  /* ================================================================
+     EDIT ROW
+  ================================================================ */
+  const handleEdit = async (id, form) => {
+    const { error } = await db.from(TABLE).update({
+      name_first:       form.name_first.trim(),
+      name_last:        form.name_last.trim(),
+      time_appointment: form.time_appointment,
+      status:           form.status,
+    }).eq("id", id);
+    if (error) notify("Update failed: " + error.message, "error");
+  };
+
+  /* ================================================================
+     DELETE ROW
+  ================================================================ */
+  const handleDelete = async (id) => {
+    const { error } = await db.from(TABLE).delete().eq("id", id);
+    if (error) notify("Delete failed: " + error.message, "error");
+    // realtime will refresh rows
+  };
+
+  /* ================================================================
+     UPDATE APPOINTMENT TIME
+  ================================================================ */
+  const handleAppt = async (id, newTime) => {
+    setRows(r => r.map(row => row.id === id ? { ...row, time_appointment: newTime } : row));
+    const { error } = await db.from(TABLE).update({ time_appointment: newTime }).eq("id", id);
+    if (error) {
+      notify("Time update failed: " + error.message, "error");
+      fetchRows();
+    }
+  };
+
+  /* ================================================================
+     UPDATE STATUS
+  ================================================================ */
+  const handleStatus = async (id, newStatus) => {
+    // Optimistic update
+    setRows(r => r.map(row => row.id === id ? { ...row, status: newStatus } : row));
+    const { error } = await db.from(TABLE).update({ status: newStatus }).eq("id", id);
+    if (error) {
+      notify("Status update failed: " + error.message, "error");
+      fetchRows(); // rollback
+    }
+  };
+
+  /* ================================================================
+     RENDER
+  ================================================================ */
+
+  /* Still determining auth state */
+  if (session === undefined) return null;
+
+  /* Not logged in — show login screen */
+  if (!session) return <LoginScreen />;
+
+  return (
+    <div className="app">
+      {/* Header */}
+      <header className="header">
+        <div className="header-logo">CES <span>Waiting Room</span></div>
+        <div style={{display:"flex", alignItems:"center", gap:"14px"}}>
+          <div className="header-meta">
+            <span className="live-dot" />
+            live
+          </div>
+          <button
+            className="btn-signout"
+            onClick={() => db.auth.signOut()}
+          >Sign out</button>
+        </div>
+      </header>
+
+      <main className="main">
+        {/* Toolbar */}
+        <div className="toolbar">
+          <div></div>
+          <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+            + Add Neighbor
+          </button>
+        </div>
+
+        {/* Table */}
+        <div className="table-wrap">
+          {loading ? (
+            <div className="loading-overlay">
+              <span className="spinner" />
+              Loading…
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">🪑</div>
+              No neighbors in the waiting room.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th style={{width:32}}></th>
+                  <th style={{width:48}}>#</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Appt. Time</th>
+                  <th>Status</th>
+                  <th style={{width:48}}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(row => (
+                  <tr
+                    key={row.id}
+                    className={
+                      (row._dragging ? "dragging " : "") +
+                      (row._dragOver ? "drag-over" : "")
+                    }
+                    onDragOver={e => handleDragOver(e, row.id)}
+                    onDrop={e => handleDrop(e, row.id)}
+                  >
+                    {/* Drag handle — draggable is on the handle only */}
+                    <td>
+                      <span
+                        className="drag-handle"
+                        title="Drag to reorder"
+                        draggable
+                        onDragStart={e => { e.stopPropagation(); handleDragStart(e, row.id); }}
+                        onDragEnd={e => { e.stopPropagation(); handleDragEnd(); }}
+                      >⠿</span>
+                    </td>
+                    {/* Order */}
+                    <td>
+                      <span className="order-badge">{row.order}</span>
+                    </td>
+                    {/* First name */}
+                    <td className="name-cell">{row.name_first || "—"}</td>
+                    {/* Last name */}
+                    <td className="name-cell">{row.name_last || "—"}</td>
+                    {/* Appointment */}
+                    <td>
+                      <select
+                        className="status-select appt-time"
+                        value={row.time_appointment || ""}
+                        onChange={e => handleAppt(row.id, e.target.value)}
+                      >
+                        {APPT_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    {/* Status dropdown */}
+                    <td>
+                      <select
+                        className={`status-select ${getStatusClass(row.status)}`}
+                        value={row.status || ""}
+                        onChange={e => handleStatus(row.id, e.target.value)}
+                      >
+                        {STATUS_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    {/* Edit & Delete */}
+                    <td>
+                      <div style={{display:"flex", gap:"4px", alignItems:"center"}}>
+                        <button
+                          className="btn btn-ghost"
+                          style={{padding:"6px 8px", fontSize:"13px"}}
+                          title="Edit neighbor"
+                          onClick={() => setEditRow(row)}
+                        >✎</button>
+                        <button
+                          className="btn btn-danger"
+                          title="Delete neighbor"
+                          onClick={() => setDeleteRow(row)}
+                        >✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </main>
+
+      {/* Modals */}
+      {showAdd && (
+        <AddModal onClose={() => setShowAdd(false)} onSave={handleAdd} />
+      )}
+      {editRow && (
+        <EditModal
+          row={editRow}
+          onClose={() => setEditRow(null)}
+          onSave={handleEdit}
+        />
+      )}
+      {deleteRow && (
+        <DeleteModal
+          row={deleteRow}
+          onClose={() => setDeleteRow(null)}
+          onConfirm={handleDelete}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          key={toast.key}
+          message={toast.message}
+          type={toast.type}
+          onDone={() => setToast(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
