@@ -3,41 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CES Waiting Room — Display</title>
-  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAYklEQVR4nGPUsQtgIAUwkaSagYGBBVPo8sH1cLaufSCaLCOyk5CVIgNkbQgnoalGVoQsRbIfmPA7BtMSaoQSHMC9gWw/Tg24HMmEZhhB28gNJfyWIEsxYiY+EpIGaU4iEgAAuZgeC1cj+KYAAAAASUVORK5CYII=">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <title>CES Waiting Room Display</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <style>
-    /* ================================================================
-       ⚙️  These token values match the admin app intentionally.
-    ================================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:      #f0f4ff;
-      --surface: #ffffff;
-      --border:  #d6dff5;
-      --text:    #1a1f36;
-      --muted:   #7a85a3;
-      --blue:    #2563eb;
-      --green:   #16a34a;
-      --mono:    'DM Mono', monospace;
-      --sans:    'Syne', sans-serif;
-    }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-    }
-
-    /* ---- Page shell ---- */
-    .page {
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1e33;
+      color: #fff;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -45,343 +23,235 @@
 
     /* ---- Header ---- */
     .header {
+      background: #1a3252;
+      padding: 20px 40px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      flex-shrink: 0;
     }
-    .header-logo {
-      font-weight: 800;
-      font-size: 22px;
-      letter-spacing: -0.5px;
-      color: var(--blue);
+    .header-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
-    .header-logo span { color: var(--text); }
-    .live-badge {
+    .header-right {
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
+      gap: 24px;
     }
-    .live-dot {
-      width: 8px; height: 8px;
+    .clock {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.9);
+    }
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+    }
+    .conn-dot {
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s infinite;
+      flex-shrink: 0;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.25; }
-    }
+    .conn-dot.live { background: #69f0ae; box-shadow: 0 0 7px #69f0ae; }
+    .conn-dot.dead { background: #ef9a9a; box-shadow: 0 0 7px #ef9a9a; }
 
-    /* ---- Two-column body ---- */
+    /* ---- Two-column layout ---- */
     .columns {
-      flex: 1;
       display: grid;
       grid-template-columns: 1fr 1fr;
+      gap: 0;
+      flex: 1;
     }
 
-    .col {
-      padding: 40px;
+    .column {
+      padding: 32px 36px;
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 24px;
     }
-    .col:first-child {
-      border-right: 1px solid var(--border);
-    }
-
-    /* ---- Column header ---- */
-    .col-header {
-      margin-bottom: 28px;
-    }
-    .col-title {
-      font-size: clamp(22px, 2.5vw, 32px);
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      line-height: 1;
-      color: var(--text);
+    .column + .column {
+      border-left: 1px solid rgba(255,255,255,0.08);
     }
 
-    /* ---- Divider under header ---- */
-    .col-divider {
-      height: 1px;
-      background: var(--border);
-      margin-bottom: 28px;
+    .column-header {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: rgba(255,255,255,0.75);
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     /* ---- Name list ---- */
     .name-list {
-      list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 10px;
     }
 
-    .name-item {
+    .name-row {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 16px 22px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 14px 18px;
-      border-radius: 6px;
-      background: transparent;
-      transition: background 0.15s;
-      animation: slideIn 0.25s ease both;
-    }
-    .name-item:nth-child(odd)  { background: rgba(37,99,235,0.04); }
-    .name-item:nth-child(even) { background: transparent; }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-8px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    .name-index {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--muted);
-      min-width: 22px;
-      text-align: right;
-      flex-shrink: 0;
+      gap: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
     }
 
     .name-text {
-      font-size: clamp(20px, 2.8vw, 36px);
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      line-height: 1.1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text);
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
     }
 
-    /* Last-initial styling */
-    .last-initial {
-      font-weight: 400;
-      color: var(--muted);
+    .name-appt {
+      margin-left: auto;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.4);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .name-blank {
+      color: rgba(255,255,255,0.2);
+      font-style: italic;
     }
 
     /* ---- Empty state ---- */
     .empty {
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--muted);
-      padding: 16px 18px;
-      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.18);
+      font-size: 1rem;
+      padding: 20px 0;
     }
   </style>
 </head>
 <body>
-<div class="page">
+<div id="root"></div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-logo">CES <span>Waiting Room</span></div>
-    <div class="live-badge">
-      <span class="live-dot"></span>
-      live
-    </div>
-  </header>
-
-  <!-- Two columns -->
-  <div class="columns">
-
-    <!-- Column 1: Appointments (Checked-in, not Walk-in, not null) -->
-    <div class="col" id="col-appt">
-      <div class="col-header">
-        <div class="col-title">Appointments</div>
-      </div>
-      <div class="col-divider"></div>
-      <ul class="name-list" id="list-appt">
-        <li class="empty">Loading…</li>
-      </ul>
-    </div>
-
-    <!-- Column 2: Walk-ins -->
-    <div class="col" id="col-walkin">
-      <div class="col-header">
-        <div class="col-title">Walk-ins</div>
-      </div>
-      <div class="col-divider"></div>
-      <ul class="name-list" id="list-walkin">
-        <li class="empty">Loading…</li>
-      </ul>
-    </div>
-
-  </div>
-</div>
-
-<script>
-/* ================================================================
-   ⚙️  SUPABASE CONFIGURATION — EDIT THESE TWO VALUES
-   ----------------------------------------------------------------
-   Must match the values in your admin page (waiting-room.html).
-   1. Supabase project → Settings → API → Project URL
-   2. Supabase project → Settings → API → anon / public key
-================================================================ */
-const SUPABASE_URL = "https://lngontciuxbvhqsamzlh.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_1Iw4mmQgpUr0wXNvVQbAjA_FV4kT-Y6";
-
-/* ---- Table name ---- */
-const TABLE = "waiting-room";
-
-/* ================================================================
-   ⚙️  DISPLAY MESSAGES — change these to customize the UI text
-================================================================ */
-const MSG_LOADING = "Loading…"; /* shown while the first fetch is in flight */
-const MSG_EMPTY   = "Empty";    /* shown after load when a column has no data */
-
-/* ================================================================
-   INIT
-================================================================ */
+<script type="text/babel">
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const { useState, useEffect, useCallback } = React;
 
-/* ---- Format a name: "Jane D." ---- */
+function useClock() {
+  const fmt = d => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const [time, setTime] = useState(fmt(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => setTime(fmt(new Date())), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
+const db = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+
 function formatName(first, last) {
-  const f = (first || "").trim();
-  const l = (last  || "").trim();
-  const initial = l.length > 0 ? l[0].toUpperCase() + "." : "";
-  return { first: f, initial };
+  const f = first?.trim() || null;
+  const l = last?.trim()  || null;
+
+  const firstPart = f ?? <span className="name-blank">?</span>;
+  const lastPart  = l ? l[0].toUpperCase() + '.' : <span className="name-blank">?</span>;
+
+  return <>{firstPart} {lastPart}</>;
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/* ---- Build the inner HTML for a single name-item ---- */
-function nameItemHTML(row, index) {
-  const { first, initial } = formatName(row.name_first, row.name_last);
-  return `<span class="name-index">${index + 1}</span>`
-       + `<span class="name-text">${escHtml(first)}&nbsp;`
-       + `<span class="last-initial">${escHtml(initial)}</span></span>`;
-}
-
-/*
- * ---- DOM-diffing renderList ----
- * Never wipes the list. Instead:
- *  1. Keyed map of existing <li> nodes by row id.
- *  2. Create or update each node in the new order.
- *  3. Append/move nodes into position with insertBefore (no removal flash).
- *  4. Remove nodes that are no longer in the list.
- *  5. Handle the empty-state <li> without touching real rows.
- */
-function renderList(ulEl, rows) {
-  /* -- collect existing keyed nodes (skip the empty-state node) -- */
-  const existing = new Map(); /* id(str) -> li element */
-  for (const li of Array.from(ulEl.children)) {
-    const key = li.dataset.rowId;
-    if (key) existing.set(key, li);
-  }
-
-  if (rows.length === 0) {
-    /* Remove all keyed rows */
-    existing.forEach(li => li.remove());
-    /* Update or create the empty-state node — always set the post-load message */
-    let emptyLi = ulEl.querySelector(".empty");
-    if (!emptyLi) {
-      emptyLi = document.createElement("li");
-      emptyLi.className = "empty";
-      ulEl.appendChild(emptyLi);
-    }
-    emptyLi.textContent = MSG_EMPTY;
-    return;
-  }
-
-  /* Remove empty-state node if present */
-  const emptyNode = ulEl.querySelector(".empty");
-  if (emptyNode) emptyNode.remove();
-
-  /* Build/update nodes in desired order */
-  rows.forEach((row, i) => {
-    const key     = String(row.id);
-    const newHTML = nameItemHTML(row, i);
-    let li        = existing.get(key);
-
-    if (!li) {
-      /* New row — create and animate in */
-      li = document.createElement("li");
-      li.className      = "name-item";
-      li.dataset.rowId  = key;
-      li.innerHTML      = newHTML;
-      li.style.animation = "none"; /* will be re-triggered below */
-    } else {
-      /* Existing row — only touch the DOM if content actually changed */
-      if (li.innerHTML !== newHTML) {
-        li.innerHTML = newHTML;
-      }
-      existing.delete(key); /* mark as still-needed */
-    }
-
-    /* Move/insert into correct position without removing first */
-    const sibling = ulEl.children[i];
-    if (sibling !== li) {
-      ulEl.insertBefore(li, sibling || null);
-    }
-  });
-
-  /* Remove rows that are no longer in the list */
-  existing.forEach(li => {
-    li.style.transition = "opacity 0.2s";
-    li.style.opacity    = "0";
-    setTimeout(() => li.remove(), 200);
-  });
-}
-
-/* ---- Fetch and render both lists ---- */
-async function refresh() {
-  const { data, error } = await db
-    .from(TABLE)
-    .select("id, name_first, name_last, time_appointment, status, order")
-    .order("order", { ascending: true });
-
-  if (error) {
-    console.error("Supabase fetch error:", error.message);
-    return;
-  }
-
-  const apptRows = (data || []).filter(r =>
-    r.time_appointment &&
-    r.time_appointment !== "Walk-in" &&
-    r.status === "Checked-in"
-  );
-
-  const walkinRows = (data || []).filter(r =>
-    r.time_appointment === "Walk-in" &&
-    r.status === "Checked-in"
-  );
-
-  renderList(
-    document.getElementById("list-appt"),
-    apptRows
-  );
-
-  renderList(
-    document.getElementById("list-walkin"),
-    walkinRows
+function NameRow({ client, showAppt }) {
+  return (
+    <div className="name-row">
+      <span className="name-text">{formatName(client.name_first, client.name_last)}</span>
+      {showAppt && <span className="name-appt">{client.appt_time}</span>}
+    </div>
   );
 }
 
-/* ---- Initial load ---- */
-refresh();
+function Display() {
+  const [clients,   setClients]   = useState([]);
+  const [connected, setConnected] = useState(false);
+  const time = useClock();
 
-/* ---- Realtime subscription ---- */
-db.channel("display-board")
-  .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, () => {
-    refresh();
-  })
-  .subscribe();
+  const fetchAll = useCallback(async () => {
+    const { data } = await db
+      .from('clients')
+      .select('*')
+      .eq('status', 'Checked-in')
+      .order('seq', { ascending: true });
+    if (data) setClients(data);
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+
+    const channel = db.channel('display-rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' },
+        ({ new: r }) => setClients(p => [...p, r].sort((a, b) => a.seq - b.seq))
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' },
+        ({ new: r }) => setClients(p => p.map(c => c.id === r.id ? r : c).sort((a, b) => a.seq - b.seq))
+      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' },
+        ({ old: r }) => setClients(p => p.filter(c => c.id !== r.id))
+      )
+      .subscribe(status => setConnected(status === 'SUBSCRIBED'));
+
+    return () => db.removeChannel(channel);
+  }, [fetchAll]);
+
+  // Filter after fetch so realtime updates are handled in one state array
+  const apptClients  = clients.filter(c =>
+    c.status === 'Checked-in' && c.appt_time && c.appt_time !== 'Walk-in'
+  );
+  const walkinClients = clients.filter(c =>
+    c.status === 'Checked-in' && c.appt_time === 'Walk-in'
+  );
+
+  return (
+    <>
+      <header className="header">
+        <span className="header-title">CES Waiting Room</span>
+        <div className="header-right">
+          <span className="clock">{time}</span>
+          <div className="conn-badge">
+            <span className={`conn-dot ${connected ? 'live' : 'dead'}`} />
+            {connected ? 'Live' : 'Reconnecting…'}
+          </div>
+        </div>
+      </header>
+
+      <div className="columns">
+        <div className="column">
+          <div className="column-header">Appointments</div>
+          <div className="name-list">
+            {apptClients.length === 0
+              ? <div className="empty">No appointments checked in</div>
+              : apptClients.map(c => <NameRow key={c.id} client={c} showAppt={false} />)
+            }
+          </div>
+        </div>
+
+        <div className="column">
+          <div className="column-header">Walk-ins</div>
+          <div className="name-list">
+            {walkinClients.length === 0
+              ? <div className="empty">No walk-ins checked in</div>
+              : walkinClients.map(c => <NameRow key={c.id} client={c} showAppt={false} />)
+            }
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Display />);
 </script>
 </body>
 </html>

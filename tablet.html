@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CES Tablet</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1e33;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: #1a3252;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 1.3rem; font-weight: 700; }
+    .header-right  { display: flex; align-items: center; gap: 16px; }
+    .header-email  { font-size: 0.82rem; color: rgba(255,255,255,0.5); }
+
+    .conn-badge {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.8rem; color: rgba(255,255,255,0.5);
+    }
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .conn-dot.live { background: #69f0ae; box-shadow: 0 0 6px #69f0ae; }
+    .conn-dot.dead { background: #ef9a9a; box-shadow: 0 0 6px #ef9a9a; }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 7px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-ghost:active { opacity: 0.7; }
+
+    /* ---- Two-column layout ---- */
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+    }
+
+    .column {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .column + .column { border-left: 1px solid rgba(255,255,255,0.08); }
+
+    .column-header {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .name-list { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ---- Client card ---- */
+    .client-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .name-text {
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .name-blank { color: rgba(255,255,255,0.2); font-style: italic; }
+
+    .shop-btn {
+      flex-shrink: 0;
+      background: #1e5799;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .shop-btn:active { background: #2a6fbe; }
+
+    /* ---- Empty state ---- */
+    .empty { color: rgba(255,255,255,0.2); font-size: 0.95rem; padding: 16px 0; }
+
+    /* ---- Shopping tray ---- */
+    .tray {
+      background: #0a1624;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 28px;
+      flex-shrink: 0;
+    }
+    .tray-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 12px;
+    }
+    .tray-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .tray-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .tray-name { font-size: 1rem; font-weight: 600; }
+    .back-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 7px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back-btn:active { opacity: 0.7; }
+
+    /* ---- Login ---- */
+    .login-page {
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+      background: #0f1e33;
+    }
+    .login-card {
+      background: #1a3252; border-radius: 16px;
+      padding: 44px 48px; width: 400px; max-width: 90vw;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .login-card h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+    .login-card .login-sub { font-size: 0.88rem; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+    .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .form-field label { font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-field input {
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 7px;
+      padding: 10px 12px; font-size: 0.9rem;
+      background: rgba(255,255,255,0.07); color: #fff;
+    }
+    .form-field input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
+    .login-error {
+      background: rgba(183,28,28,0.3); color: #ef9a9a;
+      border-radius: 7px; padding: 10px 14px;
+      font-size: 0.85rem; margin-bottom: 16px;
+    }
+    .login-btn {
+      width: 100%; padding: 12px; margin-top: 8px;
+      background: #2a6fbe; color: #fff; border: none;
+      border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer;
+    }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-loading {
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.3); font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { createClient } = supabase;
+const { useState, useEffect, useCallback } = React;
+
+const db = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+
+
+function formatName(first, last) {
+  const f = first?.trim() || null;
+  const l = last?.trim()  || null;
+  const firstPart = f ?? <span className="name-blank">?</span>;
+  const lastPart  = l ? l[0].toUpperCase() + '.' : <span className="name-blank">?</span>;
+  return <>{firstPart} {lastPart}</>;
+}
+
+// ============================================================
+// Login
+// ============================================================
+function LoginForm() {
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) setError(error.message);
+    setLoading(false);
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <h1>CES Tablet</h1>
+        <p className="login-sub">Sign in to manage the waiting room</p>
+        {error && <div className="login-error">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-field">
+            <label>Email</label>
+            <input type="email" autoFocus autoComplete="email"
+              value={email} onChange={e => setEmail(e.target.value)} required />
+          </div>
+          <div className="form-field">
+            <label>Password</label>
+            <input type="password" autoComplete="current-password"
+              value={password} onChange={e => setPassword(e.target.value)} required />
+          </div>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Tablet app
+// ============================================================
+function Tablet({ userEmail }) {
+  const [clients,   setClients]   = useState([]);
+  const [connected, setConnected] = useState(false);
+
+  const fetchAll = useCallback(async () => {
+    const { data } = await db.from('clients').select('*').order('seq', { ascending: true });
+    if (data) setClients(data);
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+
+    const channel = db.channel('tablet-rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' },
+        ({ new: r }) => setClients(p => [...p, r].sort((a, b) => a.seq - b.seq))
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' },
+        ({ new: r }) => setClients(p => p.map(c => c.id === r.id ? r : c).sort((a, b) => a.seq - b.seq))
+      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' },
+        ({ old: r }) => setClients(p => p.filter(c => c.id !== r.id))
+      )
+      .subscribe(status => setConnected(status === 'SUBSCRIBED'));
+
+    return () => db.removeChannel(channel);
+  }, [fetchAll]);
+
+  const setStatus = async (id, status) => {
+    setClients(p => p.map(c => c.id === id ? { ...c, status } : c));
+    await db.from('clients').update({ status }).eq('id', id);
+  };
+
+  const handleShop = (client) => setStatus(client.id, 'Shopping');
+
+  const handleMoveBack = (id) => setStatus(id, 'Checked-in');
+
+  const checkedIn     = clients.filter(c => c.status === 'Checked-in');
+  const apptClients   = checkedIn.filter(c => c.appt_time && c.appt_time !== 'Walk-in');
+  const walkinClients = checkedIn.filter(c => c.appt_time === 'Walk-in');
+  const shoppingClients = clients.filter(c => c.status === 'Shopping');
+
+  return (
+    <>
+      <header className="header">
+        <span className="header-title">CES Waiting Room</span>
+        <div className="header-right">
+          <div className="conn-badge">
+            <span className={`conn-dot ${connected ? 'live' : 'dead'}`} />
+            {connected ? 'Live' : 'Reconnecting…'}
+          </div>
+          <span className="header-email">{userEmail}</span>
+          <button className="btn-ghost" onClick={() => db.auth.signOut()}>Sign out</button>
+        </div>
+      </header>
+
+      <div className="columns">
+        <div className="column">
+          <div className="column-header">Appointments</div>
+          <div className="name-list">
+            {apptClients.length === 0
+              ? <div className="empty">No appointments checked in</div>
+              : apptClients.map(c => (
+                <div className="client-card" key={c.id}>
+                  <span className="name-text">{formatName(c.name_first, c.name_last)}</span>
+                  <button className="shop-btn" onClick={() => handleShop(c)}>Shopping</button>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+
+        <div className="column">
+          <div className="column-header">Walk-ins</div>
+          <div className="name-list">
+            {walkinClients.length === 0
+              ? <div className="empty">No walk-ins checked in</div>
+              : walkinClients.map(c => (
+                <div className="client-card" key={c.id}>
+                  <span className="name-text">{formatName(c.name_first, c.name_last)}</span>
+                  <button className="shop-btn" onClick={() => handleShop(c)}>Shopping</button>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      {shoppingClients.length > 0 && (
+        <div className="tray">
+          <div className="tray-header">Shopping</div>
+          <div className="tray-list">
+            {shoppingClients.map(c => (
+              <div className="tray-item" key={c.id}>
+                <span className="tray-name">{formatName(c.name_first, c.name_last)}</span>
+                <button className="back-btn" onClick={() => handleMoveBack(c.id)}>↩ Move back</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </>
+  );
+}
+
+// ============================================================
+// App — auth shell
+// ============================================================
+function App() {
+  const [session,     setSession]     = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    db.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = db.auth.onAuthStateChange((_, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (authLoading) return <div className="auth-loading">Loading…</div>;
+  if (!session)    return <LoginForm />;
+  return <Tablet userEmail={session.user.email} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
