@@ -208,7 +208,6 @@ const { useState, useEffect, useCallback } = React;
 
 const db = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
 
-
 function formatName(first, last) {
   const f = first?.trim() || null;
   const l = last?.trim()  || null;
@@ -364,7 +363,6 @@ function Tablet({ userEmail }) {
           </div>
         </div>
       )}
-
     </>
   );
 }

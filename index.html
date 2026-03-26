@@ -380,9 +380,12 @@ function WaitingRoom({ userEmail }) {
   const [newClient,   setNewClient]   = useState(EMPTY_NEW);
   const [editRow,     setEditRow]     = useState(null);
   const [deleteRow,   setDeleteRow]   = useState(null);
-  const [showClear,   setShowClear]   = useState(false);
-  const [draggingIdx, setDraggingIdx] = useState(null);
-  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [showClear,    setShowClear]    = useState(false);
+  const [settings,     setSettings]     = useState({ closed: false, closed_message: "We'll be right back!" });
+  const [showClose,    setShowClose]    = useState(false);
+  const [closeMsg,     setCloseMsg]     = useState('');
+  const [draggingIdx,  setDraggingIdx]  = useState(null);
+  const [dragOverIdx,  setDragOverIdx]  = useState(null);
 
   // Sorted view used for rendering and drag-drop index math
   const rows = [...clients].sort((a, b) => a.seq - b.seq);
@@ -396,6 +399,8 @@ function WaitingRoom({ userEmail }) {
   // ---------- Realtime ----------
   useEffect(() => {
     fetchAll();
+    db.from('settings').select('*').eq('id', 1).single()
+      .then(({ data }) => { if (data) setSettings(data); });
 
     const channel = db.channel('clients-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' },
@@ -406,6 +411,9 @@ function WaitingRoom({ userEmail }) {
       )
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' },
         ({ old: r }) => setClients(p => p.filter(c => c.id !== r.id))
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' },
+        ({ new: r }) => setSettings(r)
       )
       .subscribe(status => setConnected(status === 'SUBSCRIBED'));
 
@@ -435,6 +443,18 @@ function WaitingRoom({ userEmail }) {
   const handleClearAll = async () => {
     await db.from('clients').delete().neq('id', 0);
     setShowClear(false);
+  };
+
+  const handleCloseDisplay = async () => {
+    const msg = closeMsg.trim() || "We'll be right back!";
+    setSettings(s => ({ ...s, closed: true, closed_message: msg }));
+    setShowClose(false);
+    await db.from('settings').update({ closed: true, closed_message: msg }).eq('id', 1);
+  };
+
+  const handleOpenDisplay = async () => {
+    setSettings(s => ({ ...s, closed: false }));
+    await db.from('settings').update({ closed: false }).eq('id', 1);
   };
 
   const handleEditSave = async () => {
@@ -509,6 +529,10 @@ function WaitingRoom({ userEmail }) {
             {connected ? 'Live' : 'Disconnected'}
           </div>
           <span className="header-email">{userEmail}</span>
+          {settings.closed
+            ? <button className="btn btn-ghost btn-sm" style={{ color: '#69f0ae', borderColor: '#69f0ae' }} onClick={handleOpenDisplay}>Open Display</button>
+            : <button className="btn btn-ghost btn-sm" onClick={() => { setCloseMsg(settings.closed_message); setShowClose(true); }}>Close Display</button>
+          }
           <button className="btn btn-ghost btn-sm" onClick={() => db.auth.signOut()}>
             Sign out
           </button>
@@ -659,6 +683,29 @@ function WaitingRoom({ userEmail }) {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setEditRow(null)}>Cancel</button>
               <button className="btn btn-primary"   onClick={handleEditSave}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Display Modal */}
+      {showClose && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
+          <div className="modal">
+            <h2>Close Display</h2>
+            <div className="form-field">
+              <label>Message shown on display</label>
+              <input
+                autoFocus
+                value={closeMsg}
+                onChange={e => setCloseMsg(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCloseDisplay()}
+                placeholder="We'll be right back!"
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowClose(false)}>Cancel</button>
+              <button className="btn btn-danger" onClick={handleCloseDisplay}>Close Display</button>
             </div>
           </div>
         </div>

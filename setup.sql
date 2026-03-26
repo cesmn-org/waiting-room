@@ -26,6 +26,11 @@ to authenticated
 using (true)
 with check (true);
 
+-- Include full row data in UPDATE payloads so realtime subscribers see the new values.
+alter table public.clients replica identity full;
+-- Add to the realtime publication so changes are broadcast to subscribers.
+alter publication supabase_realtime add table public.clients;
+
 -- Atomically reorder all rows in a single UPDATE statement.
 -- security invoker: runs as the calling user so RLS applies normally.
 create or replace function reorder_clients(reorder_data jsonb)
@@ -42,3 +47,33 @@ end;
 $$;
 
 grant execute on function reorder_clients(jsonb) to authenticated;
+
+-- Single-row settings table for display state.
+create table public.settings (
+  id int not null default 1,
+  closed boolean not null default false,
+  closed_message text not null default 'We''ll be right back!',
+  constraint settings_pkey primary key (id),
+  constraint settings_single_row check (id = 1)
+);
+
+insert into public.settings (id) values (1);
+
+alter table public.settings enable row level security;
+
+create policy "anon select"
+on public.settings
+for select
+to anon
+using (true);
+
+create policy "authenticated all"
+on public.settings
+to authenticated
+using (true)
+with check (true);
+
+-- Include full row data in UPDATE payloads so realtime subscribers see the new values.
+alter table public.settings replica identity full;
+-- Add to the realtime publication so changes are broadcast to subscribers.
+alter publication supabase_realtime add table public.settings;
