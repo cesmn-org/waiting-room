@@ -2,308 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CES Waiting Room Display</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CES Waiting Room - Display</title>
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTQiIGZpbGw9IiMxYTMyNTIiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMiIgZmlsbD0iI2ZmZmZmZiIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMTYiIHkyPSI3IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjIzIiB5Mj0iMTYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==" />
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://unpkg.com/htm@3.1.1/dist/htm.js"></script>
   <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <link rel="stylesheet" href="shared.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f1e33;
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ---- Header ---- */
-    .header {
-      background: #1a3252;
-      padding: 20px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      flex-shrink: 0;
-    }
-    .header-title {
-      font-size: 2.4rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-    .header-datetime {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .header-date {
-      font-size: 2.2rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.6);
-      letter-spacing: 0.01em;
-    }
-    .datetime-sep {
-      width: 1px;
-      height: 2.4rem;
-      background: rgba(255,255,255,0.2);
-    }
-    .clock {
-      font-size: 2.2rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      color: rgba(255,255,255,0.9);
-    }
-
-    /* ---- Closed overlay ---- */
-    .closed-overlay {
-      position: fixed;
-      inset: 0;
-      background: #0f1e33;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-    .closed-message {
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.75);
-      text-align: center;
-      padding: 0 60px;
-      line-height: 1.3;
-    }
-    .conn-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1.2rem;
-      color: rgba(255,255,255,0.55);
-    }
-    .conn-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .conn-dot.dead { background: #ef9a9a; box-shadow: 0 0 7px #ef9a9a; }
-
-    /* ---- Two-column layout ---- */
-    .columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      flex: 1;
-    }
-
-    .column {
-      padding: 32px 36px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    .column + .column {
-      border-left: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .column-header {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      color: rgba(255,255,255,0.75);
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-
-    /* ---- Name list ---- */
-    .name-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .name-row {
-      background: rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 16px 22px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      border: 1px solid rgba(255,255,255,0.07);
-    }
-
-    .name-text {
-      font-size: 2.4rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      line-height: 1.2;
-    }
-
-    .name-blank {
-      color: rgba(255,255,255,0.2);
-      font-style: italic;
-    }
-
-    /* ---- Empty state ---- */
-    .empty {
-      color: rgba(255,255,255,0.18);
-      font-size: 1.5rem;
-      padding: 20px 0;
-    }
+    body { background: var(--bg-dark); color: #fff; }
+    .header { padding: 20px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+    .header-title { font-size: 2.4rem; }
+    .header-datetime { display: flex; align-items: center; gap: 16px; }
+    .header-date { font-size: 2.2rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+    .datetime-sep { width: 1px; height: 2.4rem; background: rgba(255,255,255,0.2); }
+    .clock { font-size: 2.2rem; font-weight: 600; letter-spacing: 0.04em; color: rgba(255,255,255,0.9); }
+    .closed-overlay { position: fixed; inset: 0; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .closed-message { font-size: 3.5rem; font-weight: 700; color: rgba(255,255,255,0.75); text-align: center; padding: 0 60px; line-height: 1.3; }
+    .name-row { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 16px 22px; border: 1px solid rgba(255,255,255,0.07); }
+    .name-text { font-size: 2.4rem; font-weight: 600; letter-spacing: 0.01em; line-height: 1.2; }
   </style>
 </head>
 <body>
-<div id="root"></div>
-
-<script type="text/babel">
-const { createClient } = supabase;
-const { useState, useEffect, useCallback } = React;
-
-function useClock() {
-  const fmtTime = d => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const fmtDate = d => d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-  const [time, setTime] = useState(fmtTime(new Date()));
-  const [date, setDate] = useState(fmtDate(new Date()));
-  useEffect(() => {
-    const id = setInterval(() => {
-      const now = new Date();
-      setTime(fmtTime(now));
-      setDate(fmtDate(now));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return { time, date };
-}
-
-const db = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-
-function formatName(first, last) {
-  const f = first?.trim() || null;
-  const l = last?.trim()  || null;
-
-  const firstPart = f ?? <span className="name-blank">?</span>;
-  const lastPart  = l ? l[0].toUpperCase() + '.' : <span className="name-blank">?</span>;
-
-  return <>{firstPart} {lastPart}</>;
-}
-
-function NameRow({ client }) {
-  return (
-    <div className="name-row">
-      <span className="name-text">{formatName(client.name_first, client.name_last)}</span>
-    </div>
-  );
-}
-
-function Display() {
-  const [clients,   setClients]   = useState([]);
-  const [connected, setConnected] = useState(false);
-  const [settings,  setSettings]  = useState({ closed: false, closed_message: '' });
-  const { time, date } = useClock();
-
-  const fetchAll = useCallback(async () => {
-    const { data } = await db
-      .from('clients')
-      .select('*')
-      .eq('status', 'Checked-in')
-      .order('seq', { ascending: true });
-    if (data) setClients(data);
-  }, []);
-
-  useEffect(() => {
-    fetchAll();
-    db.from('settings').select('*').eq('id', 1).single()
-      .then(({ data }) => { if (data) setSettings(data); });
-
-    const channel = db.channel('display-rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' },
-        ({ new: r }) => setClients(p => [...p, r].sort((a, b) => a.seq - b.seq))
-      )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' },
-        ({ new: r }) => setClients(p => p.map(c => c.id === r.id ? r : c).sort((a, b) => a.seq - b.seq))
-      )
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' },
-        ({ old: r }) => setClients(p => p.filter(c => c.id !== r.id))
-      )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' },
-        ({ new: r }) => setSettings(r)
-      )
-      .subscribe(status => setConnected(status === 'SUBSCRIBED'));
-
-    return () => db.removeChannel(channel);
-  }, [fetchAll]);
-
-  // Filter after fetch so realtime updates are handled in one state array
-  const apptClients  = clients.filter(c =>
-    c.status === 'Checked-in' && c.appt_time && c.appt_time !== 'Walk-in'
-  );
-  const walkinClients = clients.filter(c =>
-    c.status === 'Checked-in' && c.appt_time === 'Walk-in'
-  );
-
-  return (
-    <>
-      <header className="header">
-        <span className="header-title">CES Waiting Room</span>
-        <div className="header-right">
-          <div className="header-datetime">
-            <span className="header-date">{date}</span>
-            <div className="datetime-sep" />
-            <span className="clock">{time}</span>
-          </div>
-          {!connected && (
-            <div className="conn-badge">
-              <span className="conn-dot dead" />
-              Reconnecting…
-            </div>
-          )}
-        </div>
-      </header>
-
-      {settings.closed && (
-        <div className="closed-overlay">
-          <div className="closed-message">
-            {settings.closed_message || "We'll be right back!"}
-          </div>
-        </div>
-      )}
-
-      <div className="columns">
-        <div className="column">
-          <div className="column-header">Appointments</div>
-          <div className="name-list">
-            {apptClients.length === 0
-              ? <div className="empty">No appointments checked in</div>
-              : apptClients.map(c => <NameRow key={c.id} client={c} />)
-            }
-          </div>
-        </div>
-
-        <div className="column">
-          <div className="column-header">Walk-ins</div>
-          <div className="name-list">
-            {walkinClients.length === 0
-              ? <div className="empty">No walk-ins checked in</div>
-              : walkinClients.map(c => <NameRow key={c.id} client={c} />)
-            }
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<Display />);
-</script>
+  <div id="root"></div>
+  <script>
+    const db = createDb();
+    ReactDOM.createRoot(document.getElementById('root')).render(html`<${DisplayView} db=${db} />`);
+  </script>
 </body>
 </html>

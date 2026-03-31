@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CES Waiting Room - Admin</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTQiIGZpbGw9IiMxYTMyNTIiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMiIgZmlsbD0iI2ZmZmZmZiIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMTYiIHkyPSI3IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjIzIiB5Mj0iMTYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://unpkg.com/htm@3.1.1/dist/htm.js"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { background: var(--bg-app); color: var(--text-main); }
+    .container { max-width: 1080px; margin: 0 auto; padding: 28px 20px; }
+    .toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+    .add-form { margin-bottom: 18px; padding: 20px 22px; }
+    .form-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+    .form-field input, .form-field select { min-width: 130px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table thead { background: #f7f8fb; }
+    .table th { text-align: left; padding: 11px 14px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; border-bottom: 1px solid #ececec; }
+    .table td { padding: 9px 14px; border-bottom: 1px solid #f3f3f3; vertical-align: middle; }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr { transition: background 0.1s; }
+    .table tbody tr:hover { background: #fafbfc; }
+    .row-dragging { opacity: 0.3; }
+    .row-drag-over td { background: #e8f4ff !important; }
+    .row-drag-over td:first-child { border-left: 3px solid #1a3252; }
+    .drag-handle { display: inline-block; cursor: grab; color: #ccc; font-size: 1.15rem; line-height: 1; padding: 3px 5px; border-radius: 4px; user-select: none; transition: color 0.15s, background 0.15s; }
+    .drag-handle:hover  { color: #555; background: #f0f0f0; }
+    .drag-handle:active { cursor: grabbing; }
+    .cell-select { border: 1px solid #e0e0e0; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; background: #fff; cursor: pointer; min-width: 115px; transition: border-color 0.15s; }
+    .cell-select:hover { border-color: #aaa; }
+    .cell-select:focus { outline: none; border-color: #1a3252; }
+    .status-checked-in { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .status-shopping   { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .row-actions { display: flex; gap: 6px; }
+    .modal .form-field { margin-bottom: 14px; }
+    .modal .form-field input { width: 100%; }
+    .modal-body { color: #555; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    const db = createDb();
+    ReactDOM.createRoot(document.getElementById('root')).render(html`
+      <${AuthShell} title="CES Waiting Room" db=${db}>
+        <${WaitingRoomView} />
+      <//>
+    `);
+  </script>
+</body>
+</html>
