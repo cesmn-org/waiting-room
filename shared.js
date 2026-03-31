@@ -546,9 +546,13 @@ function TabletView({ userEmail, db }) {
   };
 
   const checkedIn = clients.filter(c => c.status === 'Checked-in');
-  const apptClients = checkedIn.filter(c => c.appt_time && c.appt_time !== 'Walk-in');
-  const walkinClients = checkedIn.filter(c => c.appt_time === 'Walk-in');
-  const shoppingClients = clients.filter(c => c.status === 'Shopping');
+  const shopping = clients.filter(c => c.status === 'Shopping');
+
+  const apptCheckedIn = checkedIn.filter(c => c.appt_time && c.appt_time !== 'Walk-in');
+  const walkinCheckedIn = checkedIn.filter(c => c.appt_time === 'Walk-in');
+
+  const apptShopping = shopping.filter(c => c.appt_time && c.appt_time !== 'Walk-in');
+  const walkinShopping = shopping.filter(c => c.appt_time === 'Walk-in');
 
   return html`
     <${React.Fragment}>
@@ -567,43 +571,58 @@ function TabletView({ userEmail, db }) {
           <div className="column-header">Appointments</div>
           <div className="name-list">
             ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
-            : apptClients.length === 0 ? html`<div className="empty-state dark-theme">No appointments</div>` 
-            : apptClients.map(c => html`
-              <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
-                <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
-              </div>
-            `)}
+            : apptCheckedIn.length === 0 && apptShopping.length === 0 ? html`<div className="empty-state dark-theme">No appointments</div>` 
+            : html`
+                ${apptCheckedIn.map(c => html`
+                  <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
+                    <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
+                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
+                  </div>
+                `)}
+                
+                ${apptShopping.length > 0 && html`
+                  <div className="list-divider" />
+                  ${apptShopping.map(c => html`
+                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
+                      <span className="name-text muted">${formatClientName(c.name_first, c.name_last)}</span>
+                      <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
+                        ${loadingId === c.id ? '...' : '↩ Move back'}
+                      </button>
+                    </div>
+                  `)}
+                `}
+            `}
           </div>
         </div>
+
         <div className="column">
           <div className="column-header">Walk-ins</div>
           <div className="name-list">
             ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
-            : walkinClients.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins</div>`
-            : walkinClients.map(c => html`
-              <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
-                <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
-              </div>
-            `)}
+            : walkinCheckedIn.length === 0 && walkinShopping.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins</div>`
+            : html`
+                ${walkinCheckedIn.map(c => html`
+                  <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
+                    <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
+                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
+                  </div>
+                `)}
+
+                ${walkinShopping.length > 0 && html`
+                  <div className="list-divider" />
+                  ${walkinShopping.map(c => html`
+                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
+                      <span className="name-text muted">${formatClientName(c.name_first, c.name_last)}</span>
+                      <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
+                        ${loadingId === c.id ? '...' : '↩ Move back'}
+                      </button>
+                    </div>
+                  `)}
+                `}
+            `}
           </div>
         </div>
       </div>
-
-      ${shoppingClients.length > 0 && html`
-        <div className="tray">
-          <div className="tray-header">Shopping</div>
-          <div className="tray-list">
-            ${shoppingClients.map(c => html`
-              <div className=${`tray-item animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                <span className="tray-name">${formatClientName(c.name_first, c.name_last)}</span>
-                <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>${loadingId === c.id ? '...' : '↩ Move back'}</button>
-              </div>
-            `)}
-          </div>
-        </div>
-      `}
     <//>
   `;
 }
