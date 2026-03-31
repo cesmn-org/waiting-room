@@ -78,8 +78,6 @@ function useRealtimeClients(db, channelName) {
 
     const channel = db.channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => {
-        // We still fetch on remote changes to ensure parity, 
-        // but optimistic updates will make the UI feel instant.
         fetchAll();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' },
@@ -217,7 +215,7 @@ function WaitingRoomView({ userEmail, db }) {
     const maxSeq = rows.length > 0 ? Math.max(...rows.map(c => c.seq)) : 0;
     const optimistic = { 
       ...newClient, 
-      id: Date.now(), // Temp ID
+      id: Date.now(),
       seq: maxSeq + 1,
       name_first: newClient.name_first.trim(),
       name_last: newClient.name_last.trim()
@@ -288,6 +286,7 @@ function WaitingRoomView({ userEmail, db }) {
       name_last:  updated.name_last?.trim()  || null,
       appt_time:  updated.appt_time          || null,
     }).eq('id', updated.id);
+
     if (error) {
       setConnected(false);
       setClients(prev);
@@ -436,14 +435,8 @@ function WaitingRoomView({ userEmail, db }) {
         <div className="modal-overlay" onClick=${e => e.target === e.currentTarget && setEditRow(null)}>
           <div className="modal">
             <h2>Edit Neighbor</h2>
-            <div className="form-field">
-              <label>First Name</label>
-              <input autoFocus value=${editRow.name_first || ''} onChange=${e => setEditRow(p => ({ ...p, name_first: e.target.value }))} onKeyDown=${e => e.key === 'Enter' && handleEditSave()} />
-            </div>
-            <div className="form-field">
-              <label>Last Name</label>
-              <input value=${editRow.name_last || ''} onChange=${e => setEditRow(p => ({ ...p, name_last: e.target.value }))} onKeyDown=${e => e.key === 'Enter' && handleEditSave()} />
-            </div>
+            <div className="form-field"><label>First Name</label><input autoFocus value=${editRow.name_first || ''} onChange=${e => setEditRow(p => ({ ...p, name_first: e.target.value }))} onKeyDown=${e => e.key === 'Enter' && handleEditSave()} /></div>
+            <div className="form-field"><label>Last Name</label><input value=${editRow.name_last || ''} onChange=${e => setEditRow(p => ({ ...p, name_last: e.target.value }))} onKeyDown=${e => e.key === 'Enter' && handleEditSave()} /></div>
             <div className="form-field">
               <label>Appt Time</label>
               <select value=${editRow.appt_time || ''} onChange=${e => setEditRow(p => ({ ...p, appt_time: e.target.value }))}>
