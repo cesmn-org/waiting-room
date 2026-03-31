@@ -30,6 +30,16 @@ function statusClass(s) {
   return 'status-' + s.toLowerCase().replace(/[^a-z]/g, '-');
 }
 
+/** 
+ * Helper to capitalize first letter and lowercase the rest 
+ */
+function formatNameInput(str) {
+  if (!str) return null;
+  const s = str.trim();
+  if (!s) return null;
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 // ============================================================
 // Hooks
 // ============================================================
@@ -189,7 +199,8 @@ function AuthShell({ children, db, title, theme }) {
   if (!session) return html`<${SharedLoginForm} title=${title} db=${db} theme=${theme} />`;
 
   return html`${React.Children.map(children, child =>
-    React.cloneElement(child, { userEmail: session.user.email, db }))}`;
+    React.cloneElement(child, { userEmail: session.user.email, db })
+  )}`;
 }
 
 // ============================================================
@@ -214,12 +225,16 @@ function WaitingRoomView({ userEmail, db }) {
     if (!newClient.name_first.trim() && !newClient.name_last.trim()) return;
     const prev = clients;
     const maxSeq = rows.length > 0 ? Math.max(...rows.map(c => c.seq)) : 0;
+    
+    const formattedFirst = formatNameInput(newClient.name_first);
+    const formattedLast  = formatNameInput(newClient.name_last);
+
     const optimistic = { 
       ...newClient, 
       id: Date.now(),
       seq: maxSeq + 1,
-      name_first: newClient.name_first.trim(),
-      name_last: newClient.name_last.trim()
+      name_first: formattedFirst,
+      name_last: formattedLast
     };
     
     setClients(p => [...p, optimistic]);
@@ -290,14 +305,22 @@ function WaitingRoomView({ userEmail, db }) {
 
   const handleEditSave = async () => {
     const prev = clients;
-    const updated = { ...editRow };
+    const formattedFirst = formatNameInput(editRow.name_first);
+    const formattedLast  = formatNameInput(editRow.name_last);
+
+    const updated = { 
+      ...editRow,
+      name_first: formattedFirst,
+      name_last: formattedLast
+    };
+
     setClients(p => p.map(c => c.id === updated.id ? updated : c));
     setEditRow(null);
 
     const { error } = await db.from('clients').update({
-      name_first: updated.name_first?.trim() || null,
-      name_last:  updated.name_last?.trim()  || null,
-      appt_time:  updated.appt_time          || null,
+      name_first: updated.name_first || null,
+      name_last:  updated.name_last  || null,
+      appt_time:  updated.appt_time  || null,
     }).eq('id', updated.id);
 
     if (error) {
