@@ -576,17 +576,19 @@ function TabletView({ userEmail, db }) {
                 ${apptCheckedIn.map(c => html`
                   <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
                     <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
-                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
+                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>
+                      ${loadingId === c.id ? '...' : html`Shop 🛒 →`}
+                    </button>
                   </div>
                 `)}
                 
                 ${apptShopping.length > 0 && html`
                   <div className="list-divider" />
                   ${apptShopping.map(c => html`
-                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                      <span className="name-text muted">${formatClientName(c.name_first, c.name_last)}</span>
+                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id} style=${{ opacity: 0.8, borderStyle: 'dashed' }}>
+                      <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${formatClientName(c.name_first, c.name_last)}</span>
                       <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
-                        ${loadingId === c.id ? '...' : '↩ Move back'}
+                        ${loadingId === c.id ? '...' : '↩ Back'}
                       </button>
                     </div>
                   `)}
@@ -604,17 +606,19 @@ function TabletView({ userEmail, db }) {
                 ${walkinCheckedIn.map(c => html`
                   <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
                     <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
-                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>${loadingId === c.id ? '...' : 'Shopping'}</button>
+                    <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>
+                      ${loadingId === c.id ? '...' : html`Shop 🛒 →`}
+                    </button>
                   </div>
                 `)}
 
                 ${walkinShopping.length > 0 && html`
                   <div className="list-divider" />
                   ${walkinShopping.map(c => html`
-                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                      <span className="name-text muted">${formatClientName(c.name_first, c.name_last)}</span>
+                    <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id} style=${{ opacity: 0.8, borderStyle: 'dashed' }}>
+                      <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${formatClientName(c.name_first, c.name_last)}</span>
                       <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
-                        ${loadingId === c.id ? '...' : '↩ Move back'}
+                        ${loadingId === c.id ? '...' : '↩ Back'}
                       </button>
                     </div>
                   `)}
