@@ -588,7 +588,7 @@ function TabletView({ userEmail, db }) {
                     <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id} style=${{ opacity: 0.8, borderStyle: 'dashed' }}>
                       <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${formatClientName(c.name_first, c.name_last)}</span>
                       <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
-                        ${loadingId === c.id ? '...' : '↩ Back'}
+                        ${loadingId === c.id ? '...' : '↩ Undo'}
                       </button>
                     </div>
                   `)}
@@ -618,7 +618,7 @@ function TabletView({ userEmail, db }) {
                     <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id} style=${{ opacity: 0.8, borderStyle: 'dashed' }}>
                       <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${formatClientName(c.name_first, c.name_last)}</span>
                       <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
-                        ${loadingId === c.id ? '...' : '↩ Back'}
+                        ${loadingId === c.id ? '...' : '↩ Undo'}
                       </button>
                     </div>
                   `)}
