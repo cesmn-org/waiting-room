@@ -23,7 +23,7 @@ for (let h = 1; h <= 5; h++) {
 
 const STATUS_OPTIONS = ['', 'Checked-in', 'Shopping'];
 
-const EMPTY_NEW = { name_first: '', name_last: '', appt_time: '', status: '' };
+const EMPTY_NEW = { name_first: '', name_last: '', appt_time: '', status: 'Checked-in' };
 
 function statusClass(s) {
   if (!s) return '';
