@@ -59,7 +59,6 @@ function useRealtimeClients(db, channelName) {
   const { connected, setConnected, makeSubscribeCallback } = useConnected();
 
   const fetchAll = React.useCallback(async () => {
-    // Explicitly set loading before fetch
     const { data, error } = await db.from('clients').select('*').order('seq', { ascending: true });
     if (error) {
       setConnected(false);
@@ -190,8 +189,7 @@ function AuthShell({ children, db, title, theme }) {
   if (!session) return html`<${SharedLoginForm} title=${title} db=${db} theme=${theme} />`;
 
   return html`${React.Children.map(children, child =>
-    React.cloneElement(child, { userEmail: session.user.email, db })
-  )}`;
+    React.cloneElement(child, { userEmail: session.user.email, db }))}`;
 }
 
 // ============================================================
@@ -199,7 +197,7 @@ function AuthShell({ children, db, title, theme }) {
 // ============================================================
 
 function WaitingRoomView({ userEmail, db }) {
-  const { clients, setClients, loading, settings, connected, setConnected } = useRealtimeClients(db, 'clients-rt');
+  const { clients, setClients, loading, settings, setSettings, connected, setConnected } = useRealtimeClients(db, 'clients-rt');
   const [showAdd, setShowAdd] = React.useState(false);
   const [newClient, setNewClient] = React.useState(EMPTY_NEW);
   const [editRow, setEditRow] = React.useState(null);
@@ -268,14 +266,26 @@ function WaitingRoomView({ userEmail, db }) {
 
   const handleCloseDisplay = async () => {
     const msg = closeMsg.trim() || "We'll be right back!";
+    const prev = settings;
+    setSettings(s => ({ ...s, closed: true, closed_message: msg }));
     setShowClose(false);
+
     const { error } = await db.from('settings').update({ closed: true, closed_message: msg }).eq('id', 1);
-    if (error) { setConnected(false); }
+    if (error) {
+      setConnected(false);
+      setSettings(prev);
+    }
   };
 
   const handleOpenDisplay = async () => {
+    const prev = settings;
+    setSettings(s => ({ ...s, closed: false }));
+    
     const { error } = await db.from('settings').update({ closed: false }).eq('id', 1);
-    if (error) { setConnected(false); }
+    if (error) {
+      setConnected(false);
+      setSettings(prev);
+    }
   };
 
   const handleEditSave = async () => {
