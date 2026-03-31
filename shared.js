@@ -59,6 +59,7 @@ function useRealtimeClients(db, channelName) {
   const { connected, setConnected, makeSubscribeCallback } = useConnected();
 
   const fetchAll = React.useCallback(async () => {
+    // Explicitly set loading before fetch
     const { data, error } = await db.from('clients').select('*').order('seq', { ascending: true });
     if (error) {
       setConnected(false);
@@ -494,7 +495,7 @@ function WaitingRoomView({ userEmail, db }) {
 }
 
 function TabletView({ userEmail, db }) {
-  const { clients, setClients, connected, setConnected } = useRealtimeClients(db, 'tablet-rt');
+  const { clients, setClients, connected, setConnected, loading } = useRealtimeClients(db, 'tablet-rt');
   const [loadingId, setLoadingId] = React.useState(null);
 
   const setStatus = async (id, status) => {
@@ -532,7 +533,8 @@ function TabletView({ userEmail, db }) {
         <div className="column">
           <div className="column-header">Appointments</div>
           <div className="name-list">
-            ${apptClients.length === 0 ? html`<div className="empty-state dark-theme">No appointments</div>` 
+            ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
+            : apptClients.length === 0 ? html`<div className="empty-state dark-theme">No appointments</div>` 
             : apptClients.map(c => html`
               <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
                 <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
@@ -544,7 +546,8 @@ function TabletView({ userEmail, db }) {
         <div className="column">
           <div className="column-header">Walk-ins</div>
           <div className="name-list">
-            ${walkinClients.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins</div>`
+            ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
+            : walkinClients.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins</div>`
             : walkinClients.map(c => html`
               <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
                 <span className="name-text">${formatClientName(c.name_first, c.name_last)}</span>
@@ -573,7 +576,7 @@ function TabletView({ userEmail, db }) {
 }
 
 function DisplayView({ db }) {
-  const { clients, settings, connected } = useRealtimeClients(db, 'display-rt');
+  const { clients, settings, connected, loading } = useRealtimeClients(db, 'display-rt');
   const [time, setTime] = React.useState(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
   const [date, setDate] = React.useState(new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }));
 
@@ -605,14 +608,16 @@ function DisplayView({ db }) {
         <div className="column">
           <div className="column-header">Appointments</div>
           <div className="name-list">
-            ${apptClients.length === 0 ? html`<div className="empty-state dark-theme">No appointments checked in</div>`
+            ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
+            : apptClients.length === 0 ? html`<div className="empty-state dark-theme">No appointments checked in</div>`
             : apptClients.map(c => html`<div className="name-row animate-fade-in" key=${c.id}><span className="name-text">${formatClientName(c.name_first, c.name_last)}</span></div>`)}
           </div>
         </div>
         <div className="column">
           <div className="column-header">Walk-ins</div>
           <div className="name-list">
-            ${walkinClients.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins checked in</div>`
+            ${loading ? html`<div className="empty-state dark-theme">Loading…</div>`
+            : walkinClients.length === 0 ? html`<div className="empty-state dark-theme">No walk-ins checked in</div>`
             : walkinClients.map(c => html`<div className="name-row animate-fade-in" key=${c.id}><span className="name-text">${formatClientName(c.name_first, c.name_last)}</span></div>`)}
           </div>
         </div>
