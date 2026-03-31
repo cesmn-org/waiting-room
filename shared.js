@@ -54,6 +54,7 @@ function useConnected() {
 
 function useRealtimeClients(db, channelName) {
   const [clients, setClients] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   const [settings, setSettings] = React.useState({ closed: false, closed_message: "We'll be right back!" });
   const { connected, setConnected, makeSubscribeCallback } = useConnected();
 
@@ -65,6 +66,7 @@ function useRealtimeClients(db, channelName) {
       setClients(data);
       setConnected(true);
     }
+    setLoading(false);
   }, [db, setConnected]);
 
   const fetchSettings = React.useCallback(async () => {
@@ -97,7 +99,7 @@ function useRealtimeClients(db, channelName) {
     };
   }, [db, channelName, fetchAll, fetchSettings, makeSubscribeCallback, setConnected]);
 
-  return { clients, setClients, settings, setSettings, connected, setConnected, fetchAll };
+  return { clients, setClients, loading, settings, setSettings, connected, setConnected, fetchAll };
 }
 
 // ============================================================
@@ -196,7 +198,7 @@ function AuthShell({ children, db, title, theme }) {
 // ============================================================
 
 function WaitingRoomView({ userEmail, db }) {
-  const { clients, setClients, settings, connected, setConnected } = useRealtimeClients(db, 'clients-rt');
+  const { clients, setClients, loading, settings, connected, setConnected } = useRealtimeClients(db, 'clients-rt');
   const [showAdd, setShowAdd] = React.useState(false);
   const [newClient, setNewClient] = React.useState(EMPTY_NEW);
   const [editRow, setEditRow] = React.useState(null);
@@ -405,7 +407,8 @@ function WaitingRoomView({ userEmail, db }) {
               </tr>
             </thead>
             <tbody>
-              ${rows.length === 0 ? html`<tr><td colSpan=${6} className="empty-state">No neighbors in the waiting room</td></tr>` 
+              ${loading ? html`<tr><td colSpan=${6} className="empty-state">Loading neighbors…</td></tr>`
+              : rows.length === 0 ? html`<tr><td colSpan=${6} className="empty-state">No neighbors in the waiting room</td></tr>` 
               : rows.map((c, idx) => html`
                 <tr key=${c.id} draggable onDragStart=${e => onDragStart(e, idx)} onDragOver=${e => onDragOver(e, idx)} onDrop=${e => onDrop(e, idx)} onDragEnd=${() => { setDraggingIdx(null); setDragOverIdx(null); }}
                   className=${[draggingIdx === idx ? 'row-dragging' : '', dragOverIdx === idx ? 'row-drag-over' : ''].filter(Boolean).join(' ')}>
