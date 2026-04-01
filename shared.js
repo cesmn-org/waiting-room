@@ -23,6 +23,9 @@ for (let h = 1; h <= 5; h++) {
 
 const STATUS_OPTIONS = ['', 'Checked-in', 'Shopping'];
 
+const DISCONNECTED_MESSAGE = 'Disconnected from database — changes are blocked until the connection is restored';
+const DISCONNECTED_MESSAGE_SHORT = 'Disconnected from database';
+
 const EMPTY_NEW = { name_first: '', name_last: '', appt_time: '', status: 'Checked-in' };
 
 function statusClass(s) {
@@ -380,7 +383,7 @@ function WaitingRoomView({ userEmail, db }) {
   return html`
     <div>
       ${!connected && html`<div className="disconnect-overlay" />`}
-      ${!connected && html`<div className="banner">⚠ Disconnected from database — changes are blocked until the connection is restored</div>`}
+      ${!connected && html`<div className="banner">⚠ ${DISCONNECTED_MESSAGE}</div>`}
 
       <header className="header">
         <span className="header-title">CES Waiting Room</span>
@@ -557,7 +560,7 @@ function TabletView({ userEmail, db }) {
   return html`
     <${React.Fragment}>
       ${!connected && html`<div className="disconnect-overlay" />`}
-      ${!connected && html`<div className="banner">⚠ Disconnected from database</div>`}
+      ${!connected && html`<div className="banner">⚠ ${DISCONNECTED_MESSAGE_SHORT}</div>`}
       <header className="header">
         <span className="header-title">CES Waiting Room</span>
         <div className="header-right">
@@ -652,7 +655,7 @@ function DisplayView({ db }) {
   return html`
     <${React.Fragment}>
       ${!connected && html`<div className="disconnect-overlay" />`}
-      ${!connected && html`<div className="banner">⚠ Disconnected from database</div>`}
+      ${!connected && html`<div className="banner">⚠ ${DISCONNECTED_MESSAGE_SHORT}</div>`}
       <header className="header animate-fade-in">
         <span className="header-title">CES Waiting Room</span>
         <div className="header-right">
