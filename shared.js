@@ -589,7 +589,7 @@ function TabletView({ userEmail, db }) {
                   <div className="list-divider" />
                   ${apptShopping.map(c => html`
                     <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id} style=${{ opacity: 0.8, borderStyle: 'dashed' }}>
-                      <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${formatClientName(c.name_first, c.name_last)} · ${c.appt_time}</span>
+                      <span className="name-text muted" style=${{ fontStyle: 'italic' }}>${c.appt_time} · ${formatClientName(c.name_first, c.name_last)}</span>
                       <button className="btn btn-secondary btn-sm" onClick=${() => setStatus(c.id, 'Checked-in')}>
                         ${loadingId === c.id ? '...' : '↩ Undo'}
                       </button>
