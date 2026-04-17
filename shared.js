@@ -16,7 +16,7 @@ const html = htm.bind(React.createElement);
 
 const TIME_OPTIONS = ['', 'Walk-in'];
 for (let h = 1; h <= 5; h++) {
-  for (let m = 0; m < 60; m += 15) {
+  for (let m = 0; m < 60; m += 5) {
     TIME_OPTIONS.push(`${h}:${String(m).padStart(2, '0')}PM`);
   }
 }
