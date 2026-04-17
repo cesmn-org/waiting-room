@@ -583,8 +583,8 @@ function TabletView({ userEmail, db }) {
                       ${loadingId === c.id ? '...' : html`Shop 🛒 →`}
                     </button>
                   </div>
-                `)
-                
+                `)}
+
                 ${apptShopping.length > 0 && html`
                   <div className="list-divider" />
                   ${apptShopping.map(c => html`
