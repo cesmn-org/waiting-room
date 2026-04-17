@@ -578,7 +578,7 @@ function TabletView({ userEmail, db }) {
             : html`
                 ${apptCheckedIn.map(c => html`
                   <div className=${`client-card animate-fade-in ${loadingId === c.id ? 'loading-pulse' : ''}`} key=${c.id}>
-                    <span className="name-text">${formatClientName(c.name_first, c.name_last)} · ${c.appt_time}</span>
+                    <span className="name-text">${c.appt_time} · ${formatClientName(c.name_first, c.name_last)}</span>
                     <button className="shop-btn" onClick=${() => setStatus(c.id, 'Shopping')}>
                       ${loadingId === c.id ? '...' : html`Shop 🛒 →`}
                     </button>
